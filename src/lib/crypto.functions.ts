@@ -3,12 +3,21 @@ import { z } from "zod";
 
 const CG = "https://api.coingecko.com/api/v3";
 
-async function cg<T>(path: string, revalidate = 60): Promise<T> {
-  const res = await fetch(`${CG}${path}`, {
-    headers: { accept: "application/json" },
-  });
-  if (!res.ok) throw new Error(`CoinGecko ${res.status}: ${path}`);
-  return (await res.json()) as T;
+const _cache = new Map<string, { at: number; data: unknown }>();
+
+async function cg<T>(path: string, ttlMs = 60_000): Promise<T> {
+  const hit = _cache.get(path);
+  const now = Date.now();
+  if (hit && now - hit.at < ttlMs) return hit.data as T;
+  const res = await fetch(`${CG}${path}`, { headers: { accept: "application/json" } });
+  if (!res.ok) {
+    // Serve stale cache on rate-limit / upstream errors so SSR doesn't crash
+    if (hit) return hit.data as T;
+    throw new Error(`CoinGecko ${res.status}: ${path}`);
+  }
+  const data = (await res.json()) as T;
+  _cache.set(path, { at: now, data });
+  return data;
 }
 
 export type MarketCoin = {
