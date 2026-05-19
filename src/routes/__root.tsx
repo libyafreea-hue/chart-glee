@@ -58,15 +58,49 @@ function TopBar() {
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Live markets</div>
           </div>
         </Link>
-        <Link
-          to="/converter"
-          className="rounded-full border border-border/60 bg-card/60 p-2 text-muted-foreground hover:text-foreground"
-          aria-label="Converter"
-        >
-          <ArrowLeftRight className="h-4 w-4" />
-        </Link>
+        <div className="flex items-center gap-1">
+          <Link
+            to="/converter"
+            className="rounded-full border border-border/60 bg-card/60 p-2 text-muted-foreground hover:text-foreground"
+            aria-label="Converter"
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+          </Link>
+          <AuthButton />
+        </div>
       </div>
     </header>
+  );
+}
+
+function AuthButton() {
+  const { user } = useAuth();
+  if (user) {
+    const avatar = user.user_metadata?.avatar_url as string | undefined;
+    return (
+      <Link
+        to="/watchlist"
+        className="rounded-full border border-border/60 bg-card/60 p-0.5"
+        aria-label="Account"
+      >
+        {avatar ? (
+          <img src={avatar} alt="" className="h-7 w-7 rounded-full" />
+        ) : (
+          <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-primary text-primary-foreground">
+            <User className="h-3.5 w-3.5" />
+          </div>
+        )}
+      </Link>
+    );
+  }
+  return (
+    <Link
+      to="/login"
+      className="rounded-full border border-border/60 bg-card/60 p-2 text-muted-foreground hover:text-foreground"
+      aria-label="Sign in"
+    >
+      <User className="h-4 w-4" />
+    </Link>
   );
 }
 
