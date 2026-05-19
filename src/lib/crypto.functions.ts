@@ -1,23 +1,14 @@
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
+// Client-side fetchers. We intentionally do NOT use createServerFn here:
+// CoinGecko rate-limits the shared Cloudflare Worker IP pool aggressively (429),
+// while browser IPs work fine. Keeping the call signature `fn({ data })` so
+// existing callers and react-query keys remain unchanged.
 
 const CG = "https://api.coingecko.com/api/v3";
 
-const _cache = new Map<string, { at: number; data: unknown }>();
-
-async function cg<T>(path: string, ttlMs = 60_000): Promise<T> {
-  const hit = _cache.get(path);
-  const now = Date.now();
-  if (hit && now - hit.at < ttlMs) return hit.data as T;
+async function cg<T>(path: string): Promise<T> {
   const res = await fetch(`${CG}${path}`, { headers: { accept: "application/json" } });
-  if (!res.ok) {
-    // Serve stale cache on rate-limit / upstream errors so SSR doesn't crash
-    if (hit) return hit.data as T;
-    throw new Error(`CoinGecko ${res.status}: ${path}`);
-  }
-  const data = (await res.json()) as T;
-  _cache.set(path, { at: now, data });
-  return data;
+  if (!res.ok) throw new Error(`CoinGecko ${res.status}: ${path}`);
+  return (await res.json()) as T;
 }
 
 export type MarketCoin = {
@@ -35,30 +26,23 @@ export type MarketCoin = {
   sparkline_in_7d?: { price: number[] };
 };
 
-export const getMarkets = createServerFn({ method: "GET" })
-  .inputValidator(
-    z.object({
-      vs: z.string().default("usd"),
-      perPage: z.number().min(1).max(250).default(100),
-      page: z.number().min(1).max(20).default(1),
-      ids: z.string().optional(),
-    }).optional(),
-  )
-  .handler(async ({ data }) => {
-    const d = data ?? { vs: "usd", perPage: 100, page: 1 };
-    const params = new URLSearchParams({
-      vs_currency: d.vs ?? "usd",
-      order: "market_cap_desc",
-      per_page: String(d.perPage ?? 100),
-      page: String(d.page ?? 1),
-      sparkline: "true",
-      price_change_percentage: "1h,24h,7d",
-    });
-    if (d.ids) params.set("ids", d.ids);
-    return cg<MarketCoin[]>(`/coins/markets?${params.toString()}`);
-  });
+type MarketsInput = { vs?: string; perPage?: number; page?: number; ids?: string };
 
-export const getGlobal = createServerFn({ method: "GET" }).handler(async () => {
+export async function getMarkets(opts?: { data?: MarketsInput }) {
+  const d = opts?.data ?? {};
+  const params = new URLSearchParams({
+    vs_currency: d.vs ?? "usd",
+    order: "market_cap_desc",
+    per_page: String(d.perPage ?? 100),
+    page: String(d.page ?? 1),
+    sparkline: "true",
+    price_change_percentage: "1h,24h,7d",
+  });
+  if (d.ids) params.set("ids", d.ids);
+  return cg<MarketCoin[]>(`/coins/markets?${params.toString()}`);
+}
+
+export async function getGlobal() {
   const data = await cg<{
     data: {
       total_market_cap: { usd: number };
@@ -69,9 +53,9 @@ export const getGlobal = createServerFn({ method: "GET" }).handler(async () => {
     };
   }>(`/global`);
   return data.data;
-});
+}
 
-export const getFearGreed = createServerFn({ method: "GET" }).handler(async () => {
+export async function getFearGreed() {
   const res = await fetch("https://api.alternative.me/fng/?limit=30");
   if (!res.ok) throw new Error("F&G fetch failed");
   const json = (await res.json()) as {
@@ -82,87 +66,77 @@ export const getFearGreed = createServerFn({ method: "GET" }).handler(async () =
     classification: d.value_classification,
     timestamp: Number(d.timestamp) * 1000,
   }));
-});
+}
 
-export const getCoin = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ id: z.string().min(1).max(80) }))
-  .handler(async ({ data }) => {
-    const c = await cg<{
-      id: string;
-      symbol: string;
-      name: string;
-      image: { large: string };
-      market_cap_rank: number;
-      market_data: {
-        current_price: { usd: number };
-        market_cap: { usd: number };
-        total_volume: { usd: number };
-        high_24h: { usd: number };
-        low_24h: { usd: number };
-        ath: { usd: number };
-        atl: { usd: number };
-        price_change_percentage_1h_in_currency: { usd: number };
-        price_change_percentage_24h: number;
-        price_change_percentage_7d: number;
-        price_change_percentage_30d: number;
-        circulating_supply: number;
-        total_supply: number | null;
-        max_supply: number | null;
-      };
-      description: { en: string };
-      links: { homepage: string[]; twitter_screen_name: string | null };
-    }>(
-      `/coins/${encodeURIComponent(data.id)}?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false`,
-    );
-    return {
-      id: c.id,
-      symbol: c.symbol,
-      name: c.name,
-      image: c.image.large,
-      rank: c.market_cap_rank,
-      price: c.market_data.current_price.usd,
-      marketCap: c.market_data.market_cap.usd,
-      volume: c.market_data.total_volume.usd,
-      high24: c.market_data.high_24h.usd,
-      low24: c.market_data.low_24h.usd,
-      ath: c.market_data.ath.usd,
-      atl: c.market_data.atl.usd,
-      change1h: c.market_data.price_change_percentage_1h_in_currency?.usd ?? 0,
-      change24h: c.market_data.price_change_percentage_24h ?? 0,
-      change7d: c.market_data.price_change_percentage_7d ?? 0,
-      change30d: c.market_data.price_change_percentage_30d ?? 0,
-      circulating: c.market_data.circulating_supply,
-      total: c.market_data.total_supply,
-      max: c.market_data.max_supply,
-      description: c.description.en?.split(". ").slice(0, 3).join(". ") ?? "",
-      homepage: c.links.homepage?.[0] ?? "",
-      twitter: c.links.twitter_screen_name ?? "",
+export async function getCoin(opts: { data: { id: string } }) {
+  const c = await cg<{
+    id: string;
+    symbol: string;
+    name: string;
+    image: { large: string };
+    market_cap_rank: number;
+    market_data: {
+      current_price: { usd: number };
+      market_cap: { usd: number };
+      total_volume: { usd: number };
+      high_24h: { usd: number };
+      low_24h: { usd: number };
+      ath: { usd: number };
+      atl: { usd: number };
+      price_change_percentage_1h_in_currency: { usd: number };
+      price_change_percentage_24h: number;
+      price_change_percentage_7d: number;
+      price_change_percentage_30d: number;
+      circulating_supply: number;
+      total_supply: number | null;
+      max_supply: number | null;
     };
-  });
+    description: { en: string };
+    links: { homepage: string[]; twitter_screen_name: string | null };
+  }>(
+    `/coins/${encodeURIComponent(opts.data.id)}?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false`,
+  );
+  return {
+    id: c.id,
+    symbol: c.symbol,
+    name: c.name,
+    image: c.image.large,
+    rank: c.market_cap_rank,
+    price: c.market_data.current_price.usd,
+    marketCap: c.market_data.market_cap.usd,
+    volume: c.market_data.total_volume.usd,
+    high24: c.market_data.high_24h.usd,
+    low24: c.market_data.low_24h.usd,
+    ath: c.market_data.ath.usd,
+    atl: c.market_data.atl.usd,
+    change1h: c.market_data.price_change_percentage_1h_in_currency?.usd ?? 0,
+    change24h: c.market_data.price_change_percentage_24h ?? 0,
+    change7d: c.market_data.price_change_percentage_7d ?? 0,
+    change30d: c.market_data.price_change_percentage_30d ?? 0,
+    circulating: c.market_data.circulating_supply,
+    total: c.market_data.total_supply,
+    max: c.market_data.max_supply,
+    description: c.description.en?.split(". ").slice(0, 3).join(". ") ?? "",
+    homepage: c.links.homepage?.[0] ?? "",
+    twitter: c.links.twitter_screen_name ?? "",
+  };
+}
 
-export const getCoinChart = createServerFn({ method: "GET" })
-  .inputValidator(
-    z.object({
-      id: z.string().min(1).max(80),
-      days: z.union([z.literal(1), z.literal(7), z.literal(30), z.literal(90), z.literal(365)]).default(7),
-    }),
-  )
-  .handler(async ({ data }) => {
-    const r = await cg<{ prices: [number, number][] }>(
-      `/coins/${encodeURIComponent(data.id)}/market_chart?vs_currency=usd&days=${data.days}`,
-    );
-    return r.prices.map(([t, p]) => ({ t, p }));
-  });
+export async function getCoinChart(opts: { data: { id: string; days: 1 | 7 | 30 | 90 | 365 } }) {
+  const r = await cg<{ prices: [number, number][] }>(
+    `/coins/${encodeURIComponent(opts.data.id)}/market_chart?vs_currency=usd&days=${opts.data.days}`,
+  );
+  return r.prices.map(([t, p]) => ({ t, p }));
+}
 
-export const getTrending = createServerFn({ method: "GET" }).handler(async () => {
+export async function getTrending() {
   const r = await cg<{
     coins: { item: { id: string; name: string; symbol: string; small: string; market_cap_rank: number; price_btc: number } }[];
   }>(`/search/trending`);
   return r.coins.map((c) => c.item);
-});
+}
 
-export const getEthGas = createServerFn({ method: "GET" }).handler(async () => {
-  // Free ETH gas oracle (no key)
+export async function getEthGas() {
   try {
     const r = await fetch("https://ethgas.watch/api/gas");
     if (!r.ok) throw new Error();
@@ -175,13 +149,11 @@ export const getEthGas = createServerFn({ method: "GET" }).handler(async () => {
   } catch {
     return { slow: 0, normal: 0, fast: 0 };
   }
-});
+}
 
-export const searchCoins = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ q: z.string().min(1).max(60) }))
-  .handler(async ({ data }) => {
-    const r = await cg<{
-      coins: { id: string; name: string; symbol: string; thumb: string; market_cap_rank: number | null }[];
-    }>(`/search?query=${encodeURIComponent(data.q)}`);
-    return r.coins.slice(0, 15);
-  });
+export async function searchCoins(opts: { data: { q: string } }) {
+  const r = await cg<{
+    coins: { id: string; name: string; symbol: string; thumb: string; market_cap_rank: number | null }[];
+  }>(`/search?query=${encodeURIComponent(opts.data.q)}`);
+  return r.coins.slice(0, 15);
+}
