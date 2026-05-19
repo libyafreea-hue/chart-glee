@@ -182,14 +182,16 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen pb-24">
-        <TopBar />
-        <main className="mx-auto max-w-screen-md px-4 py-4">
-          <Outlet />
-        </main>
-        <BottomNav />
-        <Toaster theme="dark" position="top-center" richColors />
-      </div>
+      <AuthProvider>
+        <div className="min-h-screen pb-24">
+          <TopBar />
+          <main className="mx-auto max-w-screen-md px-4 py-4">
+            <Outlet />
+          </main>
+          <BottomNav />
+          <Toaster theme="dark" position="top-center" richColors />
+        </div>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
