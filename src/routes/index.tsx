@@ -127,7 +127,7 @@ function GlobalStats() {
         <div className="flex items-center justify-between">
           <div>
             <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Next Bitcoin halving</div>
-            <div className="mt-1 font-mono-num text-2xl font-bold">{halvingDays} days</div>
+            <div className="mt-1 font-mono-num text-2xl font-bold">{halvingDays ?? "—"} days</div>
           </div>
           <div className="rounded-xl bg-gradient-primary p-3 text-primary-foreground shadow-glow">
             <Bitcoin className="h-6 w-6" />
