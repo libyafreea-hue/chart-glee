@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { Flame, Activity, Bitcoin, Fuel, Globe, ArrowRight } from "lucide-react";
 import {
   getFearGreed,
