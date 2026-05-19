@@ -91,7 +91,10 @@ function GlobalStats() {
   const { data: g } = useQuery({ queryKey: ["global"], queryFn: () => getGlobal(), staleTime: 60_000 });
   const { data: gas } = useQuery({ queryKey: ["gas"], queryFn: () => getEthGas(), staleTime: 60_000 });
 
-  const halvingDays = Math.max(0, Math.ceil((HALVING_DATE - Date.now()) / 86_400_000));
+  const [halvingDays, setHalvingDays] = useState<number | null>(null);
+  useEffect(() => {
+    setHalvingDays(Math.max(0, Math.ceil((HALVING_DATE - Date.now()) / 86_400_000)));
+  }, []);
 
   return (
     <div className="grid grid-cols-2 gap-3">
