@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { Flame, Activity, Bitcoin, Fuel, Globe, ArrowRight } from "lucide-react";
 import {
   getFearGreed,
@@ -90,7 +91,10 @@ function GlobalStats() {
   const { data: g } = useQuery({ queryKey: ["global"], queryFn: () => getGlobal(), staleTime: 60_000 });
   const { data: gas } = useQuery({ queryKey: ["gas"], queryFn: () => getEthGas(), staleTime: 60_000 });
 
-  const halvingDays = Math.max(0, Math.ceil((HALVING_DATE - Date.now()) / 86_400_000));
+  const [halvingDays, setHalvingDays] = useState<number | null>(null);
+  useEffect(() => {
+    setHalvingDays(Math.max(0, Math.ceil((HALVING_DATE - Date.now()) / 86_400_000)));
+  }, []);
 
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -123,7 +127,7 @@ function GlobalStats() {
         <div className="flex items-center justify-between">
           <div>
             <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Next Bitcoin halving</div>
-            <div className="mt-1 font-mono-num text-2xl font-bold">{halvingDays} days</div>
+            <div className="mt-1 font-mono-num text-2xl font-bold">{halvingDays ?? "—"} days</div>
           </div>
           <div className="rounded-xl bg-gradient-primary p-3 text-primary-foreground shadow-glow">
             <Bitcoin className="h-6 w-6" />
