@@ -7,10 +7,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { Home, LineChart, Newspaper, Star, Wallet, ArrowLeftRight } from "lucide-react";
+import { Home, LineChart, Newspaper, Star, Wallet, ArrowLeftRight, User } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
+import { AuthProvider, useAuth } from "@/lib/auth";
 
 function BottomNav() {
   const items = [
