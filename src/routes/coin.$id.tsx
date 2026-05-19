@@ -9,7 +9,7 @@ import {
 import { getCoin, getCoinChart } from "@/lib/crypto.functions";
 import { fmtUsd, fmtPct, fmtNum } from "@/lib/format";
 import { Skeleton } from "@/components/Skel";
-import { useLocalStorage } from "@/lib/storage";
+import { useWatchlist } from "@/lib/watchlist";
 
 export const Route = createFileRoute("/coin/$id")({
   head: ({ params }) => ({
@@ -32,8 +32,8 @@ const RANGES = [
 function CoinPage() {
   const { id } = Route.useParams();
   const [days, setDays] = useState<1 | 7 | 30 | 90 | 365>(7);
-  const [watch, setWatch] = useLocalStorage<string[]>("cgh:watchlist", []);
-  const isWatched = watch.includes(id);
+  const { has, toggle } = useWatchlist();
+  const isWatched = has(id);
 
   const coin = useQuery({ queryKey: ["coin", id], queryFn: () => getCoin({ data: { id } }), staleTime: 30_000 });
   const chart = useQuery({
@@ -74,7 +74,7 @@ function CoinPage() {
           </div>
           <button
             onClick={() => {
-              setWatch((prev) => (isWatched ? prev.filter((x) => x !== id) : [...prev, id]));
+              toggle(id);
               toast.success(isWatched ? "Removed from watchlist" : "Added to watchlist");
             }}
             aria-label="Toggle watchlist"
