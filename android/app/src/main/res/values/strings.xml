@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Crypto Gem Hunter</string>
+    <string name="title_activity_main">Crypto Gem Hunter</string>
+    <string name="package_name">com.aymann.cryptogemhunter</string>
+    <string name="custom_url_scheme">com.aymann.cryptogemhunter</string>
+</resources>
