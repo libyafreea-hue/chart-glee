@@ -19,4 +19,9 @@ export default defineConfig({
       },
     },
   },
+  vite: {
+    build: {
+      target: "chrome80",
+    },
+  },
 });
