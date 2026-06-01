@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     signInWithGoogle: async () => {
       const res = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: typeof window === "undefined" ? undefined : window.location.origin,
       });
       if (res.error) throw res.error;
     },
