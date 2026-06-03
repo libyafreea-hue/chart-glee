@@ -1,8 +1,18 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { access, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const clientDir = join(process.cwd(), 'dist', 'client');
 const assetsDir = join(clientDir, 'assets');
+const indexPath = join(clientDir, 'index.html');
+
+try {
+  await access(indexPath);
+  console.log('Using TanStack SPA shell at dist/client/index.html for Capacitor.');
+  process.exit(0);
+} catch {
+  // Older builds may not emit the SPA shell. Fall back to a minimal static entry.
+}
+
 const files = await readdir(assetsDir);
 
 const styles = files.filter((file) => file.endsWith('.css')).sort();
