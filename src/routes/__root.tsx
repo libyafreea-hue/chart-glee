@@ -12,6 +12,11 @@ import { Home, LineChart, Newspaper, Star, Wallet, ArrowLeftRight, User } from "
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { installCapacitorFetchProxy } from "@/lib/capacitor-fetch";
+
+if (typeof window !== "undefined") {
+  installCapacitorFetchProxy();
+}
 
 function BottomNav() {
   const items = [
