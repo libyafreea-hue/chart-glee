@@ -9,6 +9,8 @@ type AuthCtx = {
   session: Session | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -90,6 +92,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         redirect_uri: typeof window === "undefined" ? undefined : window.location.origin,
       });
       if (res.error) throw res.error;
+    },
+    signInWithEmail: async (email, password) => {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    },
+    signUpWithEmail: async (email, password) => {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined },
+      });
+      if (error) throw error;
     },
     signOut: async () => {
       if (isNativeAndroid()) {

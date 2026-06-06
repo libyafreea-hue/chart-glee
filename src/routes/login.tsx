@@ -7,16 +7,19 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in — Crypto Gem Hunter" },
-      { name: "description", content: "Sign in with Google to sync your watchlist across devices." },
+      { name: "description", content: "Sign in to sync your watchlist across devices." },
     ],
   }),
   component: LoginPage,
 });
 
 function LoginPage() {
-  const { user, signInWithGoogle, loading } = useAuth();
+  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail, loading } = useAuth();
   const navigate = useNavigate();
-  const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState<"google" | "email" | null>(null);
 
   useEffect(() => {
     if (user) navigate({ to: "/watchlist" });
@@ -24,11 +27,37 @@ function LoginPage() {
 
   const onGoogle = async () => {
     try {
-      setBusy(true);
+      setBusy("google");
       await signInWithGoogle();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sign-in failed");
-      setBusy(false);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error("Enter email and password");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    try {
+      setBusy("email");
+      if (mode === "signin") {
+        await signInWithEmail(email.trim(), password);
+      } else {
+        await signUpWithEmail(email.trim(), password);
+        toast.success("Account created");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -38,19 +67,61 @@ function LoginPage() {
         <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-primary text-primary-foreground shadow-glow text-2xl font-bold">
           ◆
         </div>
-        <h1 className="text-2xl font-bold">Welcome</h1>
+        <h1 className="text-2xl font-bold">{mode === "signin" ? "Welcome back" : "Create account"}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Sign in to sync your watchlist and follow your coins across devices.
+          Sync your watchlist and portfolio across devices.
         </p>
+      </div>
+
+      <form onSubmit={onEmail} className="space-y-3">
+        <input
+          type="email"
+          autoComplete="email"
+          required
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
+        />
+        <input
+          type="password"
+          autoComplete={mode === "signin" ? "current-password" : "new-password"}
+          required
+          minLength={6}
+          placeholder="Password (min 6 chars)"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
+        />
+        <button
+          type="submit"
+          disabled={busy !== null || loading}
+          className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-60"
+        >
+          {busy === "email" ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+        </button>
+      </form>
+
+      <button
+        onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+        className="block w-full text-center text-xs text-muted-foreground hover:text-foreground"
+      >
+        {mode === "signin" ? "No account? Create one" : "Already have an account? Sign in"}
+      </button>
+
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">or</span>
+        <div className="h-px flex-1 bg-border" />
       </div>
 
       <button
         onClick={onGoogle}
-        disabled={busy || loading}
+        disabled={busy !== null || loading}
         className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold transition-colors hover:bg-card/80 disabled:opacity-60"
       >
         <GoogleLogo />
-        {busy ? "Opening Google…" : "Continue with Google"}
+        {busy === "google" ? "Opening Google…" : "Continue with Google"}
       </button>
 
       <p className="text-center text-[11px] text-muted-foreground">
