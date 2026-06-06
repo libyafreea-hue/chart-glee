@@ -93,6 +93,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (res.error) throw res.error;
     },
+    signInWithEmail: async (email, password) => {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    },
+    signUpWithEmail: async (email, password) => {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined },
+      });
+      if (error) throw error;
+    },
     signOut: async () => {
       if (isNativeAndroid()) {
         try {
