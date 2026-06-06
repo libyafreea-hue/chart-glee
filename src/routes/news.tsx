@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, Newspaper } from "lucide-react";
-import { getNews } from "@/lib/news.functions";
+import { getNews } from "@/lib/news.client";
 import { timeAgo } from "@/lib/format";
 import { Skeleton } from "@/components/Skel";
 
