@@ -54,16 +54,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGoogleNative = async () => {
-    const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
-    const result = await GoogleAuth.signIn();
+    let GoogleAuth: typeof import("@codetrix-studio/capacitor-google-auth").GoogleAuth;
+    try {
+      ({ GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth"));
+    } catch (e) {
+      throw new Error("Google plugin not installed in this build");
+    }
+    let result;
+    try {
+      result = await GoogleAuth.signIn();
+    } catch (e: any) {
+      const msg = e?.message || e?.error || JSON.stringify(e);
+      throw new Error(`Google sign-in failed: ${msg}`);
+    }
     const idToken = result.authentication?.idToken;
-    if (!idToken) throw new Error("No ID token returned from Google");
+    if (!idToken) throw new Error("Google returned no ID token (check SHA-1 in Firebase)");
 
     const { error } = await supabase.auth.signInWithIdToken({
       provider: "google",
       token: idToken,
     });
-    if (error) throw error;
+    if (error) throw new Error(`Supabase rejected token: ${error.message}`);
   };
 
   const value: AuthCtx = {
