@@ -88,7 +88,7 @@ function Markets() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((c) => <CoinRow key={c.id} coin={c} />)}
+          {filtered.map((c) => <CoinRow key={c.id} coin={c} showVolume={sort === "vol"} />)}
           {filtered.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">No coins match "{q}"</p>
           )}

@@ -4,7 +4,7 @@ import type { MarketCoin } from "@/lib/crypto.functions";
 import { fmtUsd, fmtPct } from "@/lib/format";
 import { Sparkline } from "./Sparkline";
 
-export function CoinRow({ coin }: { coin: MarketCoin }) {
+export function CoinRow({ coin, showVolume = false }: { coin: MarketCoin; showVolume?: boolean }) {
   const up = (coin.price_change_percentage_24h ?? 0) >= 0;
   return (
     <Link
@@ -37,6 +37,11 @@ export function CoinRow({ coin }: { coin: MarketCoin }) {
           {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {fmtPct(coin.price_change_percentage_24h ?? 0)}
         </div>
+        {showVolume && (
+          <div className="mt-0.5 text-[10px] text-muted-foreground font-mono-num">
+            Vol {fmtUsd(coin.total_volume, { compact: true })}
+          </div>
+        )}
       </div>
     </Link>
   );
