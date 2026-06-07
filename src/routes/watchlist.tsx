@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Star, Cloud, LogOut } from "lucide-react";
+import { Star, Cloud, LogOut, KeyRound } from "lucide-react";
 import { getMarkets } from "@/lib/crypto.functions";
 import { CoinRow } from "@/components/CoinRow";
 import { Skeleton } from "@/components/Skel";
@@ -33,12 +33,20 @@ function WatchlistPage() {
           <p className="text-sm text-muted-foreground">{list.length} coins tracked</p>
         </div>
         {user ? (
-          <button
-            onClick={() => signOut()}
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="h-3 w-3" /> Sign out
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/change-password"
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <KeyRound className="h-3 w-3" /> Change password
+            </Link>
+            <button
+              onClick={() => signOut()}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-3 w-3" /> Sign out
+            </button>
+          </div>
         ) : (
           <Link
             to="/login"
