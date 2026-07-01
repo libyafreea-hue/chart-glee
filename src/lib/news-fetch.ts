@@ -47,6 +47,7 @@ function parseFeed(xml: string, source: string): NewsItem[] {
     const desc =
       seg.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i)?.[1] ?? "";
     if (!title || !link) continue;
+    if (!/^https?:\/\//i.test(link)) continue;
     items.push({
       title: stripHtml(title),
       link: link.trim(),
