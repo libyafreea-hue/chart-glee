@@ -149,7 +149,11 @@ function CoinPage() {
                   stroke={up ? "var(--bull)" : "var(--bear)"}
                   strokeWidth={2}
                   fill="url(#chartA)"
+                  isAnimationActive={false}
+                  dot={false}
+                  activeDot={{ r: 3 }}
                 />
+
               </AreaChart>
             </ResponsiveContainer>
           )}

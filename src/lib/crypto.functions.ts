@@ -126,8 +126,14 @@ export async function getCoinChart(opts: { data: { id: string; days: 1 | 7 | 30 
   const r = await cg<{ prices: [number, number][] }>(
     `/coins/${encodeURIComponent(opts.data.id)}/market_chart?vs_currency=usd&days=${opts.data.days}`,
   );
-  return r.prices.map(([t, p]) => ({ t, p }));
+  const points = r.prices;
+  // Downsample to at most ~120 points for smooth rendering on mobile.
+  const MAX = 120;
+  const step = Math.max(1, Math.ceil(points.length / MAX));
+  const sampled = step === 1 ? points : points.filter((_, i) => i % step === 0 || i === points.length - 1);
+  return sampled.map(([t, p]) => ({ t, p }));
 }
+
 
 export async function getTrending() {
   const r = await cg<{
