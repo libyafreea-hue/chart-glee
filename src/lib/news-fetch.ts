@@ -38,10 +38,11 @@ function parseFeed(xml: string, source: string): NewsItem[] {
     const end = block.indexOf("</item>");
     const seg = end >= 0 ? block.slice(0, end) : block;
     const title = seg.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i)?.[1] ?? "";
-    const link =
-      seg.match(/<link>([\s\S]*?)<\/link>/i)?.[1] ??
+    const rawLink =
+      seg.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i)?.[1] ??
       seg.match(/<link[^>]+href="([^"]+)"/i)?.[1] ??
       "";
+    const link = rawLink.replace(/<!\[CDATA\[|\]\]>/g, "").trim();
     const pub = seg.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "";
     const desc =
       seg.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i)?.[1] ?? "";
