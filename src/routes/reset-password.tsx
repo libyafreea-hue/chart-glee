@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -70,31 +71,28 @@ function ResetPasswordPage() {
           <label htmlFor="new-password" className="block text-sm font-medium">
             New password
           </label>
-          <input
+          <PasswordInput
             id="new-password"
-            type="password"
             autoComplete="new-password"
             required
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
           />
         </div>
         <div className="space-y-1.5">
           <label htmlFor="confirm-password" className="block text-sm font-medium">
             Confirm password
           </label>
-          <input
+          <PasswordInput
             id="confirm-password"
-            type="password"
             autoComplete="new-password"
             required
             minLength={6}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
           />
+
         </div>
         <button
           type="submit"
