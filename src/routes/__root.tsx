@@ -4,15 +4,18 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Home, LineChart, Newspaper, Star, Wallet, ArrowLeftRight, User } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { installCapacitorFetchProxy } from "@/lib/capacitor-fetch";
+import { initAds, showBanner, trackNavigationForInterstitial } from "@/lib/ads";
 
 if (typeof window !== "undefined") {
   installCapacitorFetchProxy();
@@ -187,6 +190,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AdsController() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    initAds().then((ok) => {
+      if (ok) showBanner("screen");
+    });
+  }, []);
+  useEffect(() => {
+    trackNavigationForInterstitial();
+  }, [pathname]);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
@@ -198,9 +214,11 @@ function RootComponent() {
             <Outlet />
           </main>
           <BottomNav />
+          <AdsController />
           <Toaster theme="dark" position="top-center" richColors />
         </div>
       </AuthProvider>
     </QueryClientProvider>
   );
 }
+
