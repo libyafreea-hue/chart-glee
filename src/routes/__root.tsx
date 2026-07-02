@@ -190,6 +190,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AdsController() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    initAds().then((ok) => {
+      if (ok) showBanner("screen");
+    });
+  }, []);
+  useEffect(() => {
+    trackNavigationForInterstitial();
+  }, [pathname]);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
@@ -201,9 +214,11 @@ function RootComponent() {
             <Outlet />
           </main>
           <BottomNav />
+          <AdsController />
           <Toaster theme="dark" position="top-center" richColors />
         </div>
       </AuthProvider>
     </QueryClientProvider>
   );
 }
+
