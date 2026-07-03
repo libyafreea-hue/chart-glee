@@ -60,21 +60,29 @@ function parseFeed(xml: string, source: string): NewsItem[] {
   return items;
 }
 
+const PROXIES = [
+  (u: string) => u, // direct (Capacitor native)
+  (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  (u: string) => `https://r.jina.ai/${u}`,
+  (u: string) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
+];
+
 async function fetchFeed(url: string): Promise<string> {
-  // Try direct first (works on Capacitor native — no CORS); fall back to a
-  // public CORS proxy for the browser.
-  try {
-    const r = await fetch(url, { headers: { accept: "application/rss+xml, application/xml" } });
-    if (r.ok) {
+  let lastErr: unknown;
+  for (const wrap of PROXIES) {
+    try {
+      const r = await fetch(wrap(url), {
+        headers: { accept: "application/rss+xml, application/xml, text/xml, */*" },
+      });
+      if (!r.ok) continue;
       const text = await r.text();
       if (text.includes("<item")) return text;
+    } catch (e) {
+      lastErr = e;
     }
-  } catch {
-    /* fall through to proxy */
   }
-  const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-  if (!r.ok) throw new Error(`proxy ${r.status}`);
-  return r.text();
+  throw new Error(`all proxies failed: ${String(lastErr ?? "unknown")}`);
 }
 
 export async function getNews(): Promise<NewsItem[]> {
