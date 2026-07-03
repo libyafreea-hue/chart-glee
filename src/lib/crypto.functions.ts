@@ -5,10 +5,33 @@
 
 const CG = "https://api.coingecko.com/api/v3";
 
+// CoinGecko free tier aggressively 429s. Try direct first, then hop through
+// public CORS/relay proxies so the chart & coin data still loads on web AND
+// on the Capacitor Android build.
+const PROXIES: Array<(u: string) => string> = [
+  (u) => u,
+  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
+];
+
 async function cg<T>(path: string): Promise<T> {
-  const res = await fetch(`${CG}${path}`, { headers: { accept: "application/json" } });
-  if (!res.ok) throw new Error(`CoinGecko ${res.status}: ${path}`);
-  return (await res.json()) as T;
+  const url = `${CG}${path}`;
+  let lastErr: unknown;
+  for (const wrap of PROXIES) {
+    try {
+      const res = await fetch(wrap(url), { headers: { accept: "application/json" } });
+      if (res.status === 429) continue;
+      if (!res.ok) {
+        lastErr = new Error(`CG ${res.status}`);
+        continue;
+      }
+      return (await res.json()) as T;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw new Error(`CoinGecko failed: ${String(lastErr ?? "unknown")} ${path}`);
 }
 
 export type MarketCoin = {
