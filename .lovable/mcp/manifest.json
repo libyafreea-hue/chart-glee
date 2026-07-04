@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "crypto-gem-hunter-mcp",
+      "version": "0.1.0",
+      "title": "Crypto Gem Hunter"
+    },
+    "tools": [
+      {
+        "name": "get_top_coins",
+        "title": "Get top cryptocurrencies",
+        "description": "Return the top cryptocurrencies by market cap with price, 24h change, market cap and volume.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "default": 20,
+              "description": "How many coins to return (1-250).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 250
+            },
+            "vs": {
+              "default": "usd",
+              "description": "Fiat currency code, e.g. usd, eur.",
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_coin",
+        "title": "Get coin details",
+        "description": "Look up current price and stats for one or more coins by CoinGecko id (e.g. 'bitcoin', 'ethereum').",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "ids": {
+              "minItems": 1,
+              "maxItems": 50,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": "CoinGecko coin ids, e.g. ['bitcoin','solana']."
+            },
+            "vs": {
+              "default": "usd",
+              "description": "Fiat currency code.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "ids"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_crypto_news",
+        "title": "Get crypto news",
+        "description": "Fetch the latest crypto news headlines aggregated from CoinDesk, Cointelegraph, Decrypt, and Bitcoin Magazine.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "default": 15,
+              "description": "Max number of headlines to return.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60
+            },
+            "query": {
+              "description": "Optional case-insensitive substring to filter titles/descriptions.",
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
